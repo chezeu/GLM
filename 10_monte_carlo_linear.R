@@ -1,6 +1,8 @@
  
 library(nleqslv)
 
+library(reclin2) # pour la fonction pair_blocking
+
 setwd("C:/Users/fchezeut/Documents/GitHub/GLM/methods_glm")
 source("1_generate_data_glm.R")
 source("2_matrice_Q_inconnu.R")
@@ -19,15 +21,16 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
   Linear_naive_s = matrix(0,nrow = nsim, ncol = p)
   
   coef_Linear_s = matrix(0,nrow = nsim, ncol = p)
-  converge_Linear = vector()
+  conv_Linear = vector()
   
   coef_Lin_method2_s = matrix(0,nrow = nsim, ncol = p)
-  converge_Lin_method2 = vector()
+  conv_Lin_method2 = vector()
   
   for (i in 1:nsim){
     
     #data generation
-    data= Generate_data(beta,K,nA,nB,vector_pk,censor, min_prev = 0.01)
+    data= Generate_data(beta,K,nA,nB,vector_pk,p1,p2,
+                        censor, min_prev = 0.01)
     
     datA=data$datA # matching variables
     datB=data$datB
@@ -37,8 +40,11 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
     # # comparison process
     M= Matrix_Q ( K,datA,datB)
     Q=M$Q
-    matrix_id=M$matrix_id
     
+  # FS=  EM_binary  (  datA, datB, K, tol = 1e-5, maxits = 500)
+   # matrix_id=FS$g
+    
+    matrix_id= FS_function (datA,datB,K)
     # Data naive
     naive_id=M$naive_id
     
@@ -84,8 +90,9 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
     ### beta estimations
     beta_linear = linear_itteration(beta0,variance0, p1,p2, Y,
                                     X12, X34,Q, tol= 1e-6, maxits = 300)
-    beta_linear_method2 =Linear_itt_method2 (beta0,mu2_0,variance0,variance1, p1,p2, Y, X12,X34, 
-                                             matrix_id,   tol= 1e-6, maxits = 300) 
+    beta_linear_method2 =Linear_itt_method2 (beta0,mu2_0,variance0,variance1,
+                                             p1,p2, Y, X12,X34, 
+                                             matrix_id,   tol= 1e-6, maxits =300) 
     
     f3= linear_naive_1(X_1,Y_naive1)
     
@@ -96,14 +103,14 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
     
     coef_Linear_s[i,]=as.vector(beta_linear$beta0)
     sigma_linear=beta_linear$sigma
-    #conv_linear=beta_linear$converge
+    conv_Linear[i]=beta_linear$converge
     it_linear=beta_linear$it
     
     coef_Lin_method2_s[i,]= as.vector(beta_linear_method2$beta)
     mu2 =as.vector(beta_linear_method2$mu2)
     #sigma_1=beta_linear_method2$variance1
     #sigma_0=beta_linear_method2$variance0
-    #converge_Lin_method2 =beta_linear_method2$converge
+    conv_Lin_method2[i] =beta_linear_method2$converge
     it_lin_2=beta_linear_method2$it 
     
     ########### naive estimation
@@ -120,13 +127,13 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
                Linear_naive_s1=Linear_naive_s[,1],Linear_naive_s2=Linear_naive_s[,2],Linear_naive_s3=Linear_naive_s[,3],
                coef_Linear_s1=coef_Linear_s[,1],coef_Linear_s2=coef_Linear_s[,2],coef_Linear_s3=coef_Linear_s[,3],
                coef_Lin_method2_s1= coef_Lin_method2_s[,1],coef_Lin_method2_s2= coef_Lin_method2_s[ ,2],coef_Lin_method2_s3= coef_Lin_method2_s[ ,3],           
-               conv_linear=conv_linear,converge_Lin_method2=converge_Lin_method2 ) )
+               conv_Linear=conv_Linear,conv_Lin_method2=conv_Lin_method2 ) )
   } 
 ######################################
 
 setwd("C:/Users/fchezeut/Documents/GitHub/GLM/Results_glm")
 
-for (i in ( c(3,6,9) )){
+for (i in ( c(1,4,7) )){
  nsim=scenarios[i,1]
   K=scenarios[i,2]
   nA=scenarios[i,3]
