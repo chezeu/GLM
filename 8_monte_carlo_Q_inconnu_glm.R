@@ -96,11 +96,11 @@ estimates_parameters<- function(nsim, K,nA,nB, V_A,V_B,
      V=databaseB_1$V
      
      
-    beta0=rep(0,p1+p2) # initialisation 
-    mu2_0=rep(0, p2 )
+    beta0=rep(0,p) # initialisation 
+    mu2_0=rep(0, length(p2) )
     lambda0 =  rep(0.1,length(event))
     lambda0 [which(event == 0)] = 0
-    beta_ini=rep(0,p1+p2)
+    beta_ini=rep(0,p)
     variance0 = 0.1
     variance1 = 0.1
     ### beta estimations

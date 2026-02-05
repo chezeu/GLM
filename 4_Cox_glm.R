@@ -20,13 +20,13 @@ Funct_lambda2<-function(lambda0,Ts){
 
 Func_prob_T<-function(beta,lambda2, event,X12,X34, p1,p2, Q){
 
-  #X34=as.matrix(X34,ncol=p2,nrow=nB)
- # X12=as.matrix(X12,ncol=p1,nrow=nA)
+  #X34=as.matrix(X34 )
+ # X12=as.matrix(X12 )
  # nA=nrow(X12)
  # nB=nrow(X34)
- # p = p1+p2
+ 
   
-  eta_mat= expo_beta  (X12,X34, p1,p2 )
+  eta_mat= expo_beta  (X12,X34, p1,p2,beta )
    
   lambda_mat <-matrix(lambda2, nrow = nA, ncol = length(lambda2), byrow = TRUE)
  
@@ -44,14 +44,14 @@ Func_prob_T<-function(beta,lambda2, event,X12,X34, p1,p2, Q){
 #############
 ################ estimations ###################################
  
-Function_lambda0<-function(matrix_proba_T,beta0,Ts,event, X12,X34, p1,p2){
+Function_lambda0<-function(matrix_proba_T,beta,Ts,event, X12,X34, p1,p2){
   
   #X34=as.matrix(X34,ncol=p2,nrow=nB)
  # X12=as.matrix(X12,ncol=p1,nrow=nA)
   #nA=nrow(X12)
  # nB=nrow(X34)
  # p = p1+p2 
-  eta_mat= expo_beta  (X12,X34, p1,p2 )
+  eta_mat= expo_beta  (X12,X34, p1,p2,beta )
   
   delta_ij <- matrix(event, nrow = nA, ncol = nB, byrow = TRUE)
   W = matrix_proba_T*delta_ij
@@ -85,11 +85,14 @@ cox_equation_1 <- function(beta,matrix_proba_T,Ts,event,
   # X12=as.matrix(X12,ncol=p1,nrow=nA)
   # p = length(p1)+length(p2)
   
-  eta1 <- X34 %*% beta[p2]        # length nB
-  eta2 <- X12 %*% beta[p1]    # length nA
+ # eta1 <- X34 %*% beta[p2]        # length nB
+  #eta2 <- X12 %*% beta[p1]    # length nA
   # form matrix eta_mat of size nA x nB: eta_mat[i,j] = eta1[i] + eta2[j]
-  eta_mat <- t(matrix(rep(as.numeric(eta1), times = nA), nrow = nB)) +
-    t( matrix(rep(as.numeric(eta2), each  = nB), nrow = nB))
+#  eta_mat <- t(matrix(rep(as.numeric(eta1), times = nA), nrow = nB)) +
+ #   t( matrix(rep(as.numeric(eta2), each  = nB), nrow = nB))
+  
+  eta_mat= expo_beta  (X12,X34, p1,p2,beta )
+  
   ####### 
    pi_exp=  matrix_proba_T * exp(eta_mat)  # matrix nA*nB
   delta_ij <- matrix(event, nA, nB, byrow = TRUE)
@@ -234,6 +237,6 @@ cox_itteration<-function(beta0,lambda0,Ts,event, X12,X34,
     it = it + 1
     
   }
-  return(list(beta0=beta0, lambda0=lambda0, matrix_proba_T=matrix_proba_T, 
+  return(list(beta0=beta0,
               converge= converge, it=it))
 }
