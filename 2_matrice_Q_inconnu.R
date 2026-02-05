@@ -149,16 +149,23 @@ paires <- pair_blocking(datA, datB,on="block",
                         add_xy = TRUE)
 paires <- compare_pairs ( paires,
         on = paste0("M",1:K ),
-         default_comparator = identical())
+         default_comparator = cmp_identical())
 ## classification
 p0 = nA/ (nA*nB) # probability that a pair is a match
+vars <- paste0("M", 1:K)
 
-model <- problink_em ( ~ M1+M2+M3+M4+M5+M6+M7+M8+M9+M10, data=paires,
-                       mprobs0 = list(0.9),uprobs0 = list(0.02),p0 = p0 ,tol = 1e-05,
-                       mprob_max = 0.999, uprob_min = 1e-04)
+form <- as.formula(
+  paste("~", paste(vars, collapse = " + "))
+)
+
+model <- problink_em( form, data = paires,  mprobs0 = list(0.9),
+  uprobs0 = list(0.02), p0 = p0, tol = 1e-05,
+  mprob_max = 0.999, uprob_min = 1e-04)
 
 p_compar <- predict(model, paires, type ="mpost", add = TRUE, binary = TRUE)
+
 prob_match <- matrix(p_compar$mpost, nrow = nA, ncol=nB,byrow = TRUE)
+
 return( prob_match =prob_match )
 }
 
