@@ -3,7 +3,7 @@ library(nleqslv)
 
 library(reclin2) # pour la fonction pair_blocking
 
-setwd("C:/Users/fchezeut/Documents/GitHub/GLM/methods_glm")
+setwd("C:/Users/fchezeut/Documents/GitHub/GLM/methods_glm/context_1")
 source("1_generate_data_glm.R")
 source("2_matrice_Q_inconnu.R")
 source("2_1_function_exponential.R" )
@@ -40,13 +40,18 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
     # # comparison process
     M= Matrix_Q ( K,datA,datB)
     Q=M$Q
+     naive_id=M$naive_id
     
-  # FS=  EM_binary  (  datA, datB, K, tol = 1e-5, maxits = 500)
-   # matrix_id=FS$g
+   # FS=  EM_binary  (  datA, datB, K, tol = 1e-5, maxits = 500)# approach of Huant
+    #matrix_id=FS$g
+    #naive_id=FS$naive_id
     
-    matrix_id= FS_function (datA,datB,K)
-    # Data naive
-    naive_id=M$naive_id
+    # fellegy and sunter
+    matrix_p= FS_function (datA,datB,K)
+    matrix_id=matrix_p$prob_match
+    #naive_id=matrix_p$naive_id
+    #Q=matrix_id/rowSums(matrix_id)
+    #summary(as.vector(matrix_id))
     
     Time = database$Time # survival variable
     delta=database$delta
@@ -87,16 +92,17 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
     beta_ini=rep(0,p )
     variance0 = 0.1
     variance1 = 0.1
+   
     ### beta estimations
     beta_linear = linear_itteration(beta0,variance0, p1,p2, Y,
                                     X12, X34,Q, tol= 1e-6, maxits = 300)
     beta_linear_method2 =Linear_itt_method2 (beta0,mu2_0,variance0,variance1,
                                              p1,p2, Y, X12,X34, 
-                                             matrix_id,   tol= 1e-6, maxits =300) 
+                                             matrix_id ,   tol= 1e-6, maxits =300) 
     
     f3= linear_naive_1(X_1,Y_naive1)
     
-    lin = glm(Y ~ X1_true + X2_true  +X3_true ,
+    lin = glm(Y ~ X1_true + X2_true  +X3_true,
               family = gaussian,
               data = true_data_glm)
     ######################
@@ -131,7 +137,7 @@ estimates_parameters<- function(nsim,beta, K,nA,nB, V_A, V_B,
   } 
 ######################################
 
-setwd("C:/Users/fchezeut/Documents/GitHub/GLM/Results_glm")
+#setwd("C:/Users/fchezeut/Documents/GitHub/GLM/Results_glm")
 
 for (i in ( c(1,4,7) )){
  nsim=scenarios[i,1]

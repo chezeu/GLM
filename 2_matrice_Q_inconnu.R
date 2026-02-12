@@ -49,10 +49,10 @@ Matrix_Q = function(K,datA,datB){
 }
 
 
-library(matrixStats)
+
 
 ###############"" Record Linkage#######################
-
+library(matrixStats)
 EM_binary <- function(  datA, datB, K, tol = 1e-5, maxits = 500){
  
    comp_mat = compare_binary(datA, datB, K)
@@ -67,7 +67,7 @@ EM_binary <- function(  datA, datB, K, tol = 1e-5, maxits = 500){
   prev = (colMeans(datB[,1:K]))
   
   u=rep(0.5,K)
-  m=rep(0.5,K)
+  m=rep(1,K)
   #u = ((1-e)*(1-prev) + e*prev)*(1-prev) + prev*((1-e)*prev+e*(1-prev))
   #m = rep(1 - e,K)
   
@@ -134,42 +134,53 @@ EM_binary <- function(  datA, datB, K, tol = 1e-5, maxits = 500){
     g[which(g < 1e-05)] <- 0
   }
    g <- matrix(g,nrow=nA,ncol=nB, byrow = TRUE)
-  
-  return(list(g=g, p=p, m=m, u = u, it = it, converge = converge))
+   naive_id = apply(g,1, which.max)
+   
+   
+  return(list(g=g, p=p, m=m, u = u, it = it, naive_id=naive_id,
+              converge = converge))
 }
 
 ############## fellegi and sunter
 
 FS_function = function(datA,datB,K){
 # pairs with same blocking variable
-
-datA$block = rep(1,nrow(datA))#variable suplementaire
-datB$block = rep(1,nrow(datB))
-paires <- pair_blocking(datA, datB,on="block",
-                        add_xy = TRUE)
+  nA <- nrow(datA)
+  nB <- nrow(datB)
+  
+#datA$block = rep(1,nrow(datA))#variable suplementaire
+#datB$block = rep(1,nrow(datB))
+  #paires <- pair_blocking(datA, datB,on="block",
+#                        add_xy = TRUE)
+  paires<- pair_minsim(datA, datB,
+                       on= c(paste0("M", 1:2) ) )
+  
 paires <- compare_pairs ( paires,
         on = paste0("M",1:K ),
-         default_comparator = cmp_identical())
+         default_comparator = cmp_identical(),
+        inplace = FALSE)
 ## classification
-p0 = nA/ (nA*nB) # probability that a pair is a match
+p0 = nA/ (nB*nA) # probability that a pair is a match
 vars <- paste0("M", 1:K)
 
 form <- as.formula(
   paste("~", paste(vars, collapse = " + "))
 )
 
-model <- problink_em( form, data = paires,  mprobs0 = list(0.9),
-  uprobs0 = list(0.02), p0 = p0, tol = 1e-05,
-  mprob_max = 0.999, uprob_min = 1e-04)
+model <- problink_em( form, data = paires,  
+                      mprobs0 = list(1),
+ uprobs0 = list(0.5), p0 = p0, tol = 1e-05,
+ mprob_max = 0.999, uprob_min = 1e-02)
 
 p_compar <- predict(model, paires, type ="mpost", add = TRUE, binary = TRUE)
+p_compar$mpost [p_compar$simsum <= 0] <- 0
 
 prob_match <- matrix(p_compar$mpost, nrow = nA, ncol=nB,byrow = TRUE)
 
-return( prob_match =prob_match )
+naive_id = apply(prob_match,1, which.max)
+
+return( list(prob_match =prob_match,naive_id=naive_id ))
 }
-
-
-
+ 
 
 
